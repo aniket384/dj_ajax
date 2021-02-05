@@ -1,0 +1,86 @@
+{% extends "main.html" %}
+
+{% block content %}
+<div class="container">
+    <form id="participant-form">
+		{% csrf_token %}
+		{% for field in form %}
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">
+			<strong>{{ field.label }}</strong>
+			</label>
+			<div class="col-sm-10">
+			{{ field }}
+			</div>
+		</div>
+		{% endfor %}
+		<div class="form-group row">
+		<input type="submit" class="btn btn-primary" value="Create Participant" />
+		</div>
+    <form>
+</div>
+
+<div class="container">
+    <table class="table table-bordered" id="showdata">
+        <thead>
+            <tr>
+                <th scope="col">First Name</th>
+                <th scope="col">Last Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Birth Date</th>
+                <th scope="col">City</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for parti in participants %}
+        <tr>
+            <td>{{parti.first_name}}</td>
+            <td>{{parti.last_name}}</td>
+            <td>{{parti.email}}</td>
+            <td>{{parti.dob | date:"Y-m-d"}}</td>
+            <td>{{parti.city}}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock content %}
+
+{% block javascript %}
+<script>
+    $("#participant-form").submit(function (e) {
+        // preventing default actions
+        e.preventDefault();
+        // serialize the data for sending the form data.
+        var serializedData = $(this).serialize();
+        // Ajax Call
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'post_participant' %}",
+            data: serializedData,
+			// handle a successful response
+            success: function (response) {
+                // On successful, clear all form data
+                $("#participant-form").trigger('reset');
+
+                // Display new participant to table
+                var instance = JSON.parse(response["instance"]);
+                var fields = instance[0]["fields"];
+                $("#showdata tbody").prepend(
+                   `<tr>
+                    <td>${fields["first_name"]||""}</td>
+                    <td>${fields["last_name"]||""}</td>
+                    <td>${fields["email"]||""}</td>
+                    <td>${fields["dob"]||""}</td>
+                    <td>${fields["city"]||""}</td>
+                    </tr>`
+                )
+            },
+            error: function (response) {
+                // alert non successful response
+                alert(response["responseJSON"]["error"]);
+            }
+        })
+    })
+</script>
+{% endblock javascript %}
